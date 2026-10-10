@@ -1,0 +1,91 @@
+// Green = 0 - 340 | Yellow = 341 - 699 | Red = 700 - 1023
+const int potentiometerPin = A0;
+const int buzzerPin = 9;
+const int ledBluePin = 6;
+const int ledGreenPin = 5;
+const int ledRedPin = 3;
+
+//--------//----------//
+int potentiometerValue;
+//--------//----------//
+
+// Bruno Mars (Talking to the Moon)
+#define NOTE_B4  494
+#define NOTE_D5  587
+#define NOTE_E5  659
+#define NOTE_FS5 740
+#define NOTE_G5  784
+#define REST     0
+
+int melody[] = {
+  NOTE_G5, NOTE_FS5, NOTE_E5, NOTE_D5, REST, NOTE_B4, NOTE_D5, NOTE_D5, NOTE_E5, REST,
+  NOTE_G5, NOTE_FS5, NOTE_E5, NOTE_D5, REST, NOTE_B4, NOTE_D5, NOTE_D5, NOTE_E5, REST,
+  NOTE_E5, NOTE_E5, NOTE_D5, NOTE_E5, NOTE_D5, NOTE_E5, NOTE_FS5, NOTE_G5, NOTE_E5, NOTE_D5, NOTE_E5, NOTE_D5, REST
+};
+
+int noteDurations[] = {
+  4, 4, 4, 2, 4, 4, 4, 4, 2, 4,
+  4, 4, 4, 2, 4, 4, 4, 4, 2, 4,
+  4, 8, 8, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2
+};
+
+const int totalNotes = sizeof(melody) / sizeof(melody[0]);
+int currentNote = 0;
+
+void setup(){
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledBluePin, OUTPUT);
+  pinMode(ledGreenPin, OUTPUT);
+  pinMode(ledRedPin, OUTPUT);
+  
+  Serial.begin(9600);
+  Serial.println("");
+}
+
+void loop() {
+  potentiometerValue = analogRead(potentiometerPin);
+  Serial.print("Potentiometer value: ");
+  Serial.println(potentiometerValue);
+
+  // Green Zone
+  if(potentiometerValue < 341){
+    analogWrite(ledBluePin, 0);
+    analogWrite(ledGreenPin, 255);
+    analogWrite(ledRedPin, 0);
+    noTone(buzzerPin);
+    currentNote = 0;
+  } 
+  // Yellow Zone (Fading Green to Red)
+  else if(potentiometerValue >= 341 && potentiometerValue < 700){
+    int redBrightness = map(potentiometerValue, 341, 699, 0, 255);
+    analogWrite(ledBluePin, 0);
+    analogWrite(ledGreenPin, 255);
+    analogWrite(ledRedPin, redBrightness);
+    noTone(buzzerPin);
+    currentNote = 0;
+  } 
+  // Red Zone (Plays Melody)
+  else {
+    analogWrite(ledGreenPin, 0);
+    analogWrite(ledBluePin, 0);
+    analogWrite(ledRedPin, 255);
+
+    int timeBase = map(potentiometerValue, 700, 1023, 1200, 1800);
+    int noteDuration = timeBase / noteDurations[currentNote];
+
+    if (melody[currentNote] != REST) {
+      tone(buzzerPin, melody[currentNote], noteDuration);
+    } else {
+      noTone(buzzerPin);
+    }
+
+    delay(noteDuration * 1.30);
+    noTone(buzzerPin);
+    currentNote++;
+
+    if (currentNote >= totalNotes) {
+      currentNote = 0;
+      delay(2000);
+    }
+  }
+}
